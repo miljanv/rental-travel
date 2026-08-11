@@ -67,7 +67,11 @@ export function Header() {
 
         {/* Main navigation bar */}
         <div className="shell flex h-[86px] items-center justify-between lg:h-[100px]">
-          <Link href="/" aria-label={site.name} className="relative z-10 block">
+          <Link
+            href="/"
+            aria-label={`${site.name} — početna`}
+            className="relative z-10 block"
+          >
             <Image
               src="/images/logo.webp"
               alt={`${site.name} logo`}
@@ -132,7 +136,7 @@ export function Header() {
         )}
       >
         <div className="shell flex h-[74px] items-center justify-between">
-          <Link href="/" aria-label={site.name}>
+          <Link href="/" aria-label={`${site.name} — početna`}>
             <Image
               src="/images/logo-sm.webp"
               alt={`${site.name} logo`}
@@ -195,13 +199,19 @@ export function Header() {
         )}
       >
         <div className="shell flex h-[86px] shrink-0 items-center justify-between lg:h-[100px]">
-          <Image
-            src="/images/logo-sm.webp"
-            alt={`${site.name} logo`}
-            width={280}
-            height={103}
-            className="h-10 w-auto"
-          />
+          <Link
+            href="/"
+            onClick={() => setMenuOpen(false)}
+            aria-label={`${site.name} — početna`}
+          >
+            <Image
+              src="/images/logo-sm.webp"
+              alt={`${site.name} logo`}
+              width={280}
+              height={103}
+              className="h-10 w-auto"
+            />
+          </Link>
           <button
             type="button"
             onClick={() => setMenuOpen(false)}

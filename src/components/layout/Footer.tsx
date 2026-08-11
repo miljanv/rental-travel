@@ -17,13 +17,15 @@ export function Footer() {
 
       <div className="shell relative grid gap-12 pt-24 pb-16 lg:grid-cols-12 lg:gap-8">
         <Reveal className="lg:col-span-4">
-          <Image
-            src="/images/logo.webp"
-            alt={`${site.name} logo`}
-            width={605}
-            height={222}
-            className="h-14 w-auto"
-          />
+          <Link href="/" aria-label={`${site.name} — početna`} className="inline-block">
+            <Image
+              src="/images/logo.webp"
+              alt={`${site.name} logo`}
+              width={605}
+              height={222}
+              className="h-14 w-auto"
+            />
+          </Link>
           <p className="mt-7 max-w-sm leading-relaxed">
             Sa željom da olakšamo i ubrzamo organizaciju putovanja, {site.founded}.
             godine osnovali smo preduzeće {site.legalName}. Vozila su tehnički

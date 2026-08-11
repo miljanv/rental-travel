@@ -22,8 +22,8 @@ export type NavItem = {
   href: string;
 };
 
+/** The home page is reached through the logo, so it is not listed here. */
 export const navigation: NavItem[] = [
-  { label: "Početna", short: "Početna", href: "/" },
   { label: "O nama", short: "O nama", href: "/o-nama" },
   { label: "Iznajmite Autobus", short: "Autobus", href: "/iznajmite-autobus" },
   { label: "Iznajmite Minibus", short: "Minibus", href: "/iznajmite-minibus" },
