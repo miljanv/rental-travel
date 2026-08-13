@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import nodemailer, { type Transporter } from "nodemailer";
 import { site } from "@/lib/site";
 
 export type ContactState = {
@@ -46,6 +47,34 @@ async function clientIp(): Promise<string | null> {
   const list = await headers();
   const forwarded = list.get("x-forwarded-for")?.split(",")[0]?.trim();
   return forwarded || list.get("x-real-ip") || null;
+}
+
+/** Reused between warm invocations so we skip the SMTP handshake when possible. */
+let transporter: Transporter | null = null;
+
+function mailer(): Transporter | null {
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASSWORD;
+
+  if (!host || !user || !pass) return null;
+
+  if (!transporter) {
+    const port = Number(process.env.SMTP_PORT ?? 465);
+    transporter = nodemailer.createTransport({
+      host,
+      port,
+      // 465 speaks TLS from the first byte; 587 upgrades through STARTTLS.
+      secure: port === 465,
+      auth: { user, pass },
+      // Without these a silent mail server would hold the function open.
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 15_000,
+    });
+  }
+
+  return transporter;
 }
 
 const HTML_ESCAPES: Record<string, string> = {
@@ -104,14 +133,13 @@ export async function submitInquiry(
     };
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.CONTACT_FROM_EMAIL;
+  const mail = mailer();
 
-  // Without a configured mail provider the form cannot deliver anything, so we
-  // tell the visitor to reach us directly instead of pretending it was sent.
-  if (!apiKey || !from) {
+  // Without SMTP credentials the form cannot deliver anything, so we tell the
+  // visitor to reach us directly instead of pretending it was sent.
+  if (!mail) {
     console.error(
-      "[kontakt] RESEND_API_KEY ili CONTACT_FROM_EMAIL nisu podešeni — upit nije poslat."
+      "[kontakt] SMTP_HOST, SMTP_USER ili SMTP_PASSWORD nisu podešeni — upit nije poslat."
     );
     return {
       status: "error",
@@ -148,34 +176,20 @@ export async function submitInquiry(
 </div>`;
 
   try {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to: [site.email],
-        reply_to: email,
-        subject: service
-          ? `Novi upit — ${service} — ${name}`
-          : `Novi upit sa sajta — ${name}`,
-        text,
-        html,
-      }),
+    await mail.sendMail({
+      // Always the authenticated mailbox: Gmail and most providers reject any
+      // other sender, so this is not worth making configurable.
+      from: `${site.name} <${process.env.SMTP_USER}>`,
+      to: process.env.CONTACT_TO_EMAIL || site.email,
+      replyTo: email,
+      subject: service
+        ? `Novi upit — ${service} — ${name}`
+        : `Novi upit sa sajta — ${name}`,
+      text,
+      html,
     });
-
-    if (!response.ok) {
-      const detail = await response.text().catch(() => "");
-      console.error(`[kontakt] Resend ${response.status}: ${detail}`);
-      return {
-        status: "error",
-        message: `Došlo je do greške pri slanju. Pozovite nas na ${site.phone}.`,
-      };
-    }
   } catch (error) {
-    console.error("[kontakt] Slanje preko Resend-a nije uspelo:", error);
+    console.error("[kontakt] SMTP slanje nije uspelo:", error);
     return {
       status: "error",
       message: `Došlo je do greške pri slanju. Pozovite nas na ${site.phone}.`,

@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
     imageSizes: [64, 128, 256, 384],
     minimumCacheTTL: 60 * 60 * 24 * 365,
   },
+  // Nodemailer resolves transports through dynamic requires, which bundlers
+  // cannot follow, so it stays a plain Node dependency at runtime.
+  serverExternalPackages: ["nodemailer"],
   experimental: {
     optimizePackageImports: ["react", "react-dom"],
   },

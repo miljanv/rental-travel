@@ -62,21 +62,31 @@ Akcent se menja u jednoj liniji — `--color-brand` u `@theme`. Za originalnu zl
 
 ## Kontakt forma
 
-Server action `src/app/kontakt/actions.ts` validira unos na serveru i šalje mejl preko Resend REST API-ja (bez dodatnih zavisnosti). Upit stiže na `site.email`, a `reply_to` je adresa posetioca, pa se na upit odgovara običnim „Reply".
+Server action `src/app/kontakt/actions.ts` validira unos na serveru i šalje mejl preko SMTP-a (`nodemailer`), bez ijednog eksternog servisa. Upit stiže na `site.email`, a `replyTo` je adresa posetioca, pa se na upit odgovara običnim „Reply".
 
-Podešavanje:
+Podešavanje: `cp .env.example .env.local`, popunite vrednosti, pa iste promenljive dodajte u Vercel → Settings → Environment Variables i pokrenite novi deploy (promenljive se čitaju pri build-u).
 
-1. Na [resend.com](https://resend.com) dodajte domen `rentaltravel.rs` i unesite DNS zapise koje vam dashboard prikaže (DKIM, SPF, return-path). Resend šalje isključivo sa verifikovanog domena.
-2. Napravite API ključ (`re_…`).
-3. Lokalno: `cp .env.example .env.local` i popunite vrednosti.
-4. Produkcija: iste dve promenljive u Vercel → Settings → Environment Variables, pa novi deploy.
+Gmail — potreban je uključen 2FA i „App password" sa [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords), jer obična lozinka ne prolazi:
 
 ```bash
-RESEND_API_KEY=re_vas_kljuc
-CONTACT_FROM_EMAIL="Rental Travel <upit@rentaltravel.rs>"
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=rentaltraveldoo@gmail.com
+SMTP_PASSWORD=16_cifreni_app_password
 ```
 
-Dok `RESEND_API_KEY` i `CONTACT_FROM_EMAIL` nisu podešeni, forma javlja posetiocu da pozove telefonom umesto da lažno prijavi uspeh, a razlog upisuje u server log.
+Sanduče na domenu (Hostinger) — nema DNS izmena jer zona već ima Hostinger SPF i MX:
+
+```bash
+SMTP_HOST=smtp.hostinger.com
+SMTP_PORT=465
+SMTP_USER=office@rentaltravel.rs
+SMTP_PASSWORD=lozinka_sanduceta
+```
+
+Port 465 ide preko TLS-a od prvog bajta, a 587 kroz STARTTLS — kod prati port, pa je dovoljno promeniti `SMTP_PORT`. Pošiljalac je uvek `SMTP_USER` jer Gmail i većina servera odbijaju tuđu adresu u `From`, a primalac je `site.email` ako se ne postavi `CONTACT_TO_EMAIL`.
+
+Dok SMTP promenljive nisu podešene, forma javlja posetiocu da pozove telefonom umesto da lažno prijavi uspeh, a razlog upisuje u server log. Svaka greška servera se loguje sa punim odgovorom, vidljivo u Vercel Runtime Logs.
 
 Zaštita od spama: skriveno polje `website` (bot koji ga popuni dobije poruku o uspehu, ali se mejl ne šalje) i ograničenje od tri upita u deset minuta po IP adresi. Ograničenje se drži u memoriji instance, pa je usporavanje botova, ne tvrda garancija — ako spam postane problem, sledeći korak je Cloudflare Turnstile.
 
