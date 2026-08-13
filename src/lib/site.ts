@@ -17,27 +17,17 @@ export const site = {
 
 export type NavItem = {
   label: string;
-  /** Condensed label for the desktop bar, where seven full labels do not fit. */
-  short: string;
   href: string;
 };
 
 /** The home page is reached through the logo, so it is not listed here. */
 export const navigation: NavItem[] = [
-  { label: "O nama", short: "O nama", href: "/o-nama" },
-  { label: "Iznajmite Autobus", short: "Autobus", href: "/iznajmite-autobus" },
-  { label: "Iznajmite Minibus", short: "Minibus", href: "/iznajmite-minibus" },
-  {
-    label: "Iznajmite Automobil",
-    short: "Automobil",
-    href: "/iznajmite-automobil",
-  },
-  {
-    label: "Transferi Aerodrom",
-    short: "Transferi",
-    href: "/transferi-aerodrom",
-  },
-  { label: "Kontakt", short: "Kontakt", href: "/kontakt" },
+  { label: "O nama", href: "/o-nama" },
+  { label: "Iznajmite Autobus", href: "/iznajmite-autobus" },
+  { label: "Iznajmite Mini Bus", href: "/iznajmite-minibus" },
+  { label: "Iznajmite Automobil", href: "/iznajmite-automobil" },
+  { label: "Transfer Aerodrom", href: "/transferi-aerodrom" },
+  { label: "Kontakt", href: "/kontakt" },
 ];
 
 export type ServiceCategory = {

@@ -82,23 +82,24 @@ export function Header() {
             />
           </Link>
 
-          <nav className="hidden items-center gap-6 lg:flex xl:gap-8">
+          {/* Full labels leave no room for the call button until 2xl, so the
+              bar tightens its type instead of dropping links. */}
+          <nav className="hidden items-center gap-4 lg:flex xl:gap-5 2xl:gap-6">
             {navigation.map((item) => {
               const active =
-                pathname === item.href ||
-                (item.href !== "/" && pathname.startsWith(item.href));
+                pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   data-active={active}
-                  aria-label={item.label}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
-                    "link-wipe font-label text-[13px] tracking-[0.16em] whitespace-nowrap uppercase transition-colors xl:tracking-[0.2em]",
+                    "link-wipe font-label text-[11px] tracking-[0.06em] whitespace-nowrap uppercase transition-colors xl:text-[12px] xl:tracking-[0.1em]",
                     active ? "text-brand" : "text-white hover:text-brand"
                   )}
                 >
-                  {item.short}
+                  {item.label}
                 </Link>
               );
             })}
@@ -146,23 +147,22 @@ export function Header() {
             />
           </Link>
 
-          <nav className="hidden items-center gap-6 lg:flex xl:gap-8">
+          <nav className="hidden items-center gap-4 lg:flex xl:gap-5 2xl:gap-6">
             {navigation.map((item) => {
               const active =
-                pathname === item.href ||
-                (item.href !== "/" && pathname.startsWith(item.href));
+                pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   data-active={active}
-                  aria-label={item.label}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
-                    "link-wipe font-label text-[13px] tracking-[0.16em] whitespace-nowrap uppercase transition-colors xl:tracking-[0.2em]",
+                    "link-wipe font-label text-[11px] tracking-[0.06em] whitespace-nowrap uppercase transition-colors xl:text-[12px] xl:tracking-[0.1em]",
                     active ? "text-brand" : "text-white hover:text-brand"
                   )}
                 >
-                  {item.short}
+                  {item.label}
                 </Link>
               );
             })}
@@ -171,7 +171,7 @@ export function Header() {
           <div className="flex items-center gap-4">
             <a
               href={site.phoneHref}
-              className="font-label text-[13px] tracking-[0.2em] text-white uppercase transition-colors hover:text-brand"
+              className="font-label text-[13px] tracking-[0.14em] whitespace-nowrap text-white uppercase transition-colors hover:text-brand xl:tracking-[0.2em]"
             >
               {site.phone}
             </a>
@@ -227,27 +227,37 @@ export function Header() {
           {/* `m-auto` instead of `justify-center` so tall lists stay fully
               scrollable on short viewports rather than clipping at the top. */}
           <div className="shell m-auto flex w-full flex-col gap-1 py-6">
-            {navigation.map((item, index) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMenuOpen(false)}
-                className="group flex items-baseline gap-5 py-2"
-                style={{
-                  transitionDelay: `${index * 55}ms`,
-                  opacity: menuOpen ? 1 : 0,
-                  transform: menuOpen ? "none" : "translateY(20px)",
-                  transition: "opacity .5s ease, transform .5s ease",
-                }}
-              >
-                <span className="font-label text-xs tracking-[0.25em] text-brand">
-                  0{index + 1}
-                </span>
-                <span className="font-heading text-2xl text-white transition-colors group-hover:text-brand sm:text-4xl">
-                  {item.label}
-                </span>
-              </Link>
-            ))}
+            {navigation.map((item, index) => {
+              const active =
+                pathname === item.href || pathname.startsWith(`${item.href}/`);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  onClick={() => setMenuOpen(false)}
+                  className="group flex items-baseline gap-5 py-2"
+                  style={{
+                    transitionDelay: `${index * 55}ms`,
+                    opacity: menuOpen ? 1 : 0,
+                    transform: menuOpen ? "none" : "translateY(20px)",
+                    transition: "opacity .5s ease, transform .5s ease",
+                  }}
+                >
+                  <span className="font-label text-xs tracking-[0.25em] text-brand">
+                    0{index + 1}
+                  </span>
+                  <span
+                    className={cn(
+                      "font-heading text-2xl transition-colors group-hover:text-brand sm:text-4xl lg:text-5xl",
+                      active ? "text-brand" : "text-white"
+                    )}
+                  >
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </nav>
 

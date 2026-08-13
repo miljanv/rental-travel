@@ -62,13 +62,23 @@ Akcent se menja u jednoj liniji — `--color-brand` u `@theme`. Za originalnu zl
 
 ## Kontakt forma
 
-Server action `src/app/kontakt/actions.ts` validira unos na serveru i šalje mejl preko Resend REST API-ja (bez dodatnih zavisnosti). Podesite:
+Server action `src/app/kontakt/actions.ts` validira unos na serveru i šalje mejl preko Resend REST API-ja (bez dodatnih zavisnosti). Upit stiže na `site.email`, a `reply_to` je adresa posetioca, pa se na upit odgovara običnim „Reply".
+
+Podešavanje:
+
+1. Na [resend.com](https://resend.com) dodajte domen `rentaltravel.rs` i unesite DNS zapise koje vam dashboard prikaže (DKIM, SPF, return-path). Resend šalje isključivo sa verifikovanog domena.
+2. Napravite API ključ (`re_…`).
+3. Lokalno: `cp .env.example .env.local` i popunite vrednosti.
+4. Produkcija: iste dve promenljive u Vercel → Settings → Environment Variables, pa novi deploy.
 
 ```bash
-cp .env.example .env.local
+RESEND_API_KEY=re_vas_kljuc
+CONTACT_FROM_EMAIL="Rental Travel <upit@rentaltravel.rs>"
 ```
 
-Dok `RESEND_API_KEY` i `CONTACT_FROM_EMAIL` nisu podešeni, forma javlja posetiocu da pozove telefonom umesto da lažno prijavi uspeh.
+Dok `RESEND_API_KEY` i `CONTACT_FROM_EMAIL` nisu podešeni, forma javlja posetiocu da pozove telefonom umesto da lažno prijavi uspeh, a razlog upisuje u server log.
+
+Zaštita od spama: skriveno polje `website` (bot koji ga popuni dobije poruku o uspehu, ali se mejl ne šalje) i ograničenje od tri upita u deset minuta po IP adresi. Ograničenje se drži u memoriji instance, pa je usporavanje botova, ne tvrda garancija — ako spam postane problem, sledeći korak je Cloudflare Turnstile.
 
 ## Slike
 

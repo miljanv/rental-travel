@@ -35,6 +35,18 @@ export function ContactForm() {
 
   return (
     <form action={formAction} className="grid gap-6 sm:grid-cols-2">
+      {/* Decoy for bots: hidden from people, ignored by autofill and keyboard. */}
+      <div aria-hidden className="hidden">
+        <label htmlFor="website">Ne popunjavajte ovo polje</label>
+        <input
+          id="website"
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+        />
+      </div>
+
       <div>
         <label htmlFor="name" className={labelClass}>
           Ime i prezime *
