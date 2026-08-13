@@ -55,7 +55,7 @@ export function HeroSlider() {
             )}
           >
             <Image
-              src={slide.image}
+              src={slide.heroImage ?? slide.image}
               alt={slide.title}
               fill
               priority={index === 0}

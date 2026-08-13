@@ -8,7 +8,7 @@ import { busServices, busVehicles } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Iznajmite Autobus",
   description:
-    "Iznajmljivanje autobusa turističke klase od 47 do 83 mesta — turistička putovanja, ekskurzije, team building, transferi, prevoz sportista, dece i radnika.",
+    "Iznajmljivanje autobusa turističke klase od 47 do 87 mesta — turistička putovanja, ekskurzije, team building, transferi, prevoz sportista, dece i radnika.",
   alternates: { canonical: "/iznajmite-autobus" },
 };
 
@@ -26,7 +26,7 @@ export default function BusPage() {
       <FleetSection
         eyebrow="Rental travel"
         title="Autobusi turističke klase za svaku vrstu putovanja"
-        intro="Naša flota obuhvata solo autobuse VDL i Van Hool turističke klase od 47 do 63 mesta, kao i dabldeker autobuse na dve etaže sa 78 i više mesta. Sva vozila su tehnički ispravna, klimatizovana i redovno servisirana."
+        intro="Naša flota obuhvata solo autobuse VDL i Van Hool turističke klase od 47 do 63 mesta, kao i dabldeker autobuse na dve etaže sa 83 i 87 mesta. Sva vozila su tehnički ispravna, klimatizovana i redovno servisirana."
         servicesTitle="Ukoliko Vam je potreban:"
         services={busServices}
         servicesNote="Pozovite nas ili pošaljite upit i u najkraćem roku dobijate ponudu prilagođenu Vašoj ruti i broju putnika."

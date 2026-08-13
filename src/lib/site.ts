@@ -36,7 +36,10 @@ export type ServiceCategory = {
   shortTitle: string;
   href: string;
   excerpt: string;
+  /** Card artwork, cropped to a portrait tile in the category grid. */
   image: string;
+  /** Full-bleed shot for the home page carousel; falls back to `image`. */
+  heroImage?: string;
 };
 
 export const categories: ServiceCategory[] = [
@@ -46,8 +49,9 @@ export const categories: ServiceCategory[] = [
     shortTitle: "Autobus",
     href: "/iznajmite-autobus",
     excerpt:
-      "Autobusi turističke klase od 47 do 83 mesta za putovanja, ekskurzije, team building i ugovoreni prevoz.",
+      "Autobusi turističke klase od 47 do 87 mesta za putovanja, ekskurzije, team building i ugovoreni prevoz.",
     image: "/images/fleet/ns-785-rt-1-1600.webp",
+    heroImage: "/images/hero/zajednicke-1-1920.webp",
   },
   {
     slug: "iznajmite-minibus",
@@ -57,6 +61,7 @@ export const categories: ServiceCategory[] = [
     excerpt:
       "Minibusevi i kombi vozila do 20 mesta — idealni za manje grupe, gradske ture i transfere.",
     image: "/images/fleet/ns-871-rt-3-1600.webp",
+    heroImage: "/images/hero/zajednicke-2-1920.webp",
   },
   {
     slug: "transferi-aerodrom",
@@ -66,6 +71,7 @@ export const categories: ServiceCategory[] = [
     excerpt:
       "Pouzdan i udoban transfer do i sa aerodroma, sa bilo koje lokacije, prilagođen vašem rasporedu leta.",
     image: "/images/hero/sprinter-wide-1600.webp",
+    heroImage: "/images/hero/zajednicke-3-1920.webp",
   },
   {
     slug: "iznajmite-automobil",
@@ -93,7 +99,7 @@ export const fleetClasses: Record<
     capacity?: string;
   }
 > = {
-  dabldeker: { label: "Dabldeker autobus", capacity: "78+ mesta" },
+  dabldeker: { label: "Dabldeker autobus", capacity: "83 — 87 mesta" },
   solo: { label: "Solo autobus", capacity: "47 — 63 mesta" },
   minibus: { label: "Minibus", capacity: "do 20 mesta" },
   kombi: { label: "Kombi vozilo", capacity: "do 8 mesta" },
@@ -112,19 +118,37 @@ export const photoViews: Record<PhotoView, string> = {
   interior: "Unutra",
 };
 
-/** A row of seats on either side of the aisle. */
-export type SeatRow = { left: number; right: number };
+/**
+ * What occupies one side of the aisle in a row: a number of seats, or a fixture
+ * that takes their place. Crew seats next to the driver are not drawn, so the
+ * seat total always matches the capacity we advertise.
+ */
+export type SeatCell =
+  | number
+  | "driver"
+  | "codriver"
+  | "door"
+  | "stairs"
+  | "toilet"
+  | "table"
+  | "kitchen"
+  /** Narrow fold-down seats for tour guides, outside the commercial count. */
+  | "guide";
+
+export type SeatRow = { left: SeatCell; right: SeatCell };
 
 export type SeatDeck = {
   label?: string;
   rows: SeatRow[];
-  /** Wider bench across the back of the deck. */
+  /** Wider bench across the back of the deck, spanning the aisle. */
   back: number;
-  /** An upper deck is reached by stairs and has neither driver nor doors. */
-  front: "driver" | "stairs";
 };
 
-export type SeatPlan = { decks: SeatDeck[] };
+export type SeatPlan = {
+  decks: SeatDeck[];
+  /** Derived from the seat count instead of read off the real vehicle. */
+  approximate?: boolean;
+};
 
 export type Vehicle = {
   slug: string;
@@ -165,48 +189,185 @@ function photos(
   ];
 }
 
-/**
- * Approximate 2+2 layout derived from the seat count: full rows of four, one
- * shorter row where the middle door sits, and a wider bench at the back. Good
- * enough to show a group how the vehicle is arranged, but every plan needs a
- * check against the real vehicle before it can be called exact.
- */
-function deck(
-  total: number,
-  back: number,
-  label?: string,
-  front: SeatDeck["front"] = "driver"
-): SeatDeck {
-  const rows: SeatRow[] = [];
-  const remaining = total - back;
-  const fullRows = Math.floor(remaining / 4);
-  const rest = remaining % 4;
-
-  for (let i = 0; i < fullRows; i += 1) rows.push({ left: 2, right: 2 });
-
-  if (rest > 0) {
-    // Seats come off the door side, which is the right-hand one on our vehicles.
-    const left = Math.min(rest, 2);
-    rows.splice(Math.ceil(fullRows * 0.6), 0, { left, right: rest - left });
-  }
-
-  return { label, rows, back, front };
-}
+/** Shorthands that keep the seat maps below readable. */
+const row = (left: SeatCell, right: SeatCell): SeatRow => ({ left, right });
+const full = (count: number) => Array.from({ length: count }, () => row(2, 2));
 
 export function deckSeats(value: SeatDeck) {
-  return value.rows.reduce((sum, row) => sum + row.left + row.right, 0) + value.back;
+  const cell = (side: SeatCell) => (typeof side === "number" ? side : 0);
+  return (
+    value.rows.reduce((sum, r) => sum + cell(r.left) + cell(r.right), 0) +
+    value.back
+  );
 }
 
-const coachPlan = (seats: number): SeatPlan => ({ decks: [deck(seats, 5)] });
-const minibusPlan = (seats: number): SeatPlan => ({ decks: [deck(seats, 4)] });
+/**
+ * Seat maps below are transcribed from the operator's own diagrams, row by row,
+ * so they match the numbered seats in the vehicle. Rows read from the front:
+ * `row(left, right)` is what sits on each side of the aisle, `back` is the rear
+ * bench that spans it.
+ */
+const seatPlans = {
+  /** NS 765-RT, VDL Synergy: 20 seats downstairs, 63 upstairs. */
+  ns765: {
+    decks: [
+      {
+        label: "Donja etaža",
+        rows: [
+          row("driver", "codriver"),
+          row(2, 2),
+          row("table", "table"),
+          ...full(4),
+          row("toilet", "stairs"),
+        ],
+        back: 0,
+      },
+      {
+        label: "Gornja etaža",
+        rows: [
+          row(2, 2),
+          row(2, "stairs"),
+          ...full(7),
+          row(2, "stairs"),
+          ...full(3),
+          row(2, 0),
+          ...full(2),
+        ],
+        back: 5,
+      },
+    ],
+  },
 
-/** The lower-deck share is the usual VDL split; correct it once measured. */
-const doubleDeckPlan = (seats: number, lower = 19): SeatPlan => ({
-  decks: [
-    deck(lower, 5, "Donja etaža"),
-    deck(seats - lower, 5, "Gornja etaža", "stairs"),
-  ],
-});
+  /** NS 878-RT, Van Hool: 24 seats downstairs plus two guide seats, 63 upstairs. */
+  ns878: {
+    decks: [
+      {
+        label: "Donja etaža",
+        rows: [
+          row("driver", "codriver"),
+          row("guide", "stairs"),
+          row("kitchen", "kitchen"),
+          row(2, 2),
+          row("table", "table"),
+          ...full(5),
+          row("toilet", "stairs"),
+        ],
+        back: 0,
+      },
+      {
+        label: "Gornja etaža",
+        rows: [
+          row(2, 2),
+          row(2, "stairs"),
+          ...full(1),
+          row(0, 2),
+          ...full(6),
+          row(2, "stairs"),
+          row(2, 0),
+          ...full(4),
+          row(0, 2),
+        ],
+        back: 5,
+      },
+    ],
+  },
+
+  /** NS 754-RT, VDL MagiQ. */
+  ns754: {
+    decks: [
+      {
+        rows: [row("driver", "door"), ...full(6), row(2, "door"), ...full(8)],
+        back: 5,
+      },
+    ],
+  },
+
+  /** NS 868-RT, Van Hool: seats 49 and 50 fold down beside the middle door. */
+  ns868: {
+    decks: [
+      {
+        rows: [
+          row("driver", "door"),
+          ...full(8),
+          row(2, "door"),
+          ...full(4),
+          row(0, 2),
+        ],
+        back: 5,
+      },
+    ],
+  },
+
+  /** NS 785-RT, VDL Jonckheere. */
+  ns785: {
+    decks: [
+      {
+        rows: [
+          row("driver", "door"),
+          ...full(7),
+          row(2, "door"),
+          row(2, 0),
+          ...full(5),
+        ],
+        back: 5,
+      },
+    ],
+  },
+
+  /** NS 778-RT, VDL Jonckheere: toilet and a table midway down the cabin. */
+  ns778: {
+    decks: [
+      {
+        rows: [
+          row("driver", "door"),
+          ...full(6),
+          row(0, "toilet"),
+          row("table", "door"),
+          row(2, 0),
+          ...full(4),
+        ],
+        back: 5,
+      },
+    ],
+  },
+
+  /** NS 832-RT, VDL Berkhof. */
+  ns832: {
+    decks: [
+      {
+        rows: [row("driver", "codriver"), ...full(6), row(2, "door"), ...full(5)],
+        back: 5,
+      },
+    ],
+  },
+} satisfies Record<string, SeatPlan>;
+
+/**
+ * Fallback for vehicles whose diagram we do not have: full rows of four with
+ * the leftover seats next to the middle door. Marked approximate so the chart
+ * says so.
+ */
+function approximatePlan(seats: number, back: number): SeatPlan {
+  const remaining = seats - back;
+  const rows = full(Math.floor(remaining / 4));
+  const rest = remaining % 4;
+
+  if (rest > 0) {
+    // Leftover seats sit across from the middle door.
+    rows.splice(
+      Math.ceil(rows.length * 0.6),
+      0,
+      row(Math.min(rest, 2), Math.max(rest - 2, 0))
+    );
+  }
+
+  return {
+    decks: [{ rows: [row("driver", "door"), ...rows], back }],
+    approximate: true,
+  };
+}
+
+const minibusPlan = (seats: number) => approximatePlan(seats, 4);
 
 export const vehicles: Vehicle[] = [
   {
@@ -222,27 +383,33 @@ export const vehicles: Vehicle[] = [
       exterior: [9, 6, 12, 10, 3, 11],
       interior: [4, 5, 8, 2, 1, 7],
     }),
-    seatPlan: doubleDeckPlan(83),
+    seatPlan: seatPlans.ns765,
   },
   {
     slug: "vdl-synergy-ns-915-rt",
     brand: "VDL",
     model: "Synergy",
     plate: "NS 915-RT",
+    seats: 87,
     fleetClass: "dabldeker",
     description:
-      "Dabldeker autobus turističke klase na dve etaže, za velike grupe putnika.",
-    photos: [],
+      "Dabldeker autobus turističke klase na dve etaže, sa 87 komercijalnih mesta za putnike.",
+    photos: photos("ns-915-rt", { exterior: [4, 3], interior: [2, 1] }),
   },
   {
     slug: "van-hool-ns-878-rt",
     brand: "Van Hool",
     model: "Van Hool",
     plate: "NS 878-RT",
+    seats: 87,
     fleetClass: "dabldeker",
     description:
-      "Dabldeker autobus turističke klase sa dve etaže i velikim prtljažnim prostorom.",
-    photos: [],
+      "Dabldeker autobus turističke klase sa 87 komercijalnih mesta, kuhinjom i toaletom.",
+    photos: photos("ns-878-rt", {
+      exterior: [8],
+      interior: [6, 3, 2, 5, 4, 1, 7],
+    }),
+    seatPlan: seatPlans.ns878,
   },
   {
     slug: "vdl-magiq-ns-754-rt",
@@ -257,7 +424,7 @@ export const vehicles: Vehicle[] = [
       exterior: [1, 7, 8, 4, 6],
       interior: [3, 5, 2],
     }),
-    seatPlan: coachPlan(63),
+    seatPlan: seatPlans.ns754,
   },
   {
     slug: "vdl-berkhof-ns-832-rt",
@@ -272,7 +439,7 @@ export const vehicles: Vehicle[] = [
       exterior: [10, 11, 9, 8, 1, 7, 6, 2],
       interior: [5, 12, 3, 4],
     }),
-    seatPlan: coachPlan(51),
+    seatPlan: seatPlans.ns832,
   },
   {
     slug: "van-hool-ns-868-rt",
@@ -284,10 +451,10 @@ export const vehicles: Vehicle[] = [
     description:
       "Autobus turističke klase sa 57 komercijalnih mesta za putnike.",
     photos: photos("ns-868-rt", {
-      exterior: [4, 2, 3, 5, 6],
+      exterior: [4, 2, 3, 5, 6, 8, 7],
       interior: [1],
     }),
-    seatPlan: coachPlan(57),
+    seatPlan: seatPlans.ns868,
   },
   {
     slug: "vdl-jonckheere-ns-778-rt",
@@ -302,29 +469,33 @@ export const vehicles: Vehicle[] = [
       exterior: [3, 5, 1, 2, 4, 11],
       interior: [6, 12, 7, 9, 10, 8],
     }),
-    seatPlan: coachPlan(47),
+    seatPlan: seatPlans.ns778,
   },
   {
     slug: "vdl-jonckheere-ns-785-rt",
     brand: "VDL",
     model: "Jonckheere",
     plate: "NS 785-RT",
-    seats: 47,
+    seats: 57,
     fleetClass: "solo",
     description:
-      "Autobus za prevoz sportista, dece i radnika sa 47 komercijalnih mesta za sedenje.",
+      "Autobus za prevoz sportista, dece i radnika sa 57 komercijalnih mesta za sedenje.",
     photos: photos("ns-785-rt", { exterior: [1, 3], interior: [2] }),
-    seatPlan: coachPlan(47),
+    seatPlan: seatPlans.ns785,
   },
   {
     slug: "vdl-jonckheere-ns-884-rt",
     brand: "VDL",
     model: "Jonckheere",
     plate: "NS 884-RT",
+    seats: 47,
     fleetClass: "solo",
     description:
-      "Solo autobus turističke klase za grupna putovanja i ugovoreni prevoz.",
-    photos: [],
+      "Solo autobus turističke klase sa 47 komercijalnih mesta za grupna putovanja i ugovoreni prevoz.",
+    photos: photos("ns-884-rt", {
+      exterior: [2, 1, 5, 6],
+      interior: [3, 4],
+    }),
   },
   {
     slug: "mercedes-sprinter-ns-858-rt",
@@ -388,7 +559,20 @@ export const vehicles: Vehicle[] = [
     fleetClass: "kombi",
     description:
       "Kombi vozilo do 8 mesta — transferi do aerodroma i poslovni prevoz.",
-    photos: [],
+    photos: photos("ns-890-rt", { exterior: [5, 3, 4], interior: [2, 1] }),
+  },
+  {
+    slug: "fiat-scudo-ns-769-cr",
+    brand: "Fiat",
+    model: "Scudo",
+    plate: "NS 769-CR",
+    fleetClass: "kombi",
+    description:
+      "Putnički kombi za manje grupe — transferi, poslovna putovanja i prevoz do aerodroma.",
+    photos: photos("fiat-scudo", {
+      exterior: [3, 1, 2, 4],
+      interior: [5, 6],
+    }),
   },
   {
     slug: "skoda-superb-ns-900-rt",

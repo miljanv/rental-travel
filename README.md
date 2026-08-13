@@ -37,6 +37,8 @@ src/
     site.ts                 # SVI podaci sajta (kontakt, meni, vozila, usluge)
 scripts/
   optimize-images.mjs       # JPG/PNG -> WebP u 3 širine
+  import-fleet.mjs          # fotografije flote, prva serija
+  import-fleet-v2.mjs       # fotografije flote, druga serija + carousel
   make-logo.mjs             # transparentni logo iz prosleđene slike
 public/images/              # optimizovane slike (8.8 MB umesto 22 MB)
 ```
@@ -92,14 +94,24 @@ Zaštita od spama: skriveno polje `website` (bot koji ga popuni dobije poruku o 
 
 ## Slike
 
-Originali su skinuti sa starog sajta i konvertovani u WebP u tri širine (640/1024/1600) plus blur placeholder:
+Sve slike se konvertuju u WebP u tri širine (640/1024/1600) plus blur placeholder; slike za hero carousel dobijaju i 1920 jer se prikazuju preko celog ekrana.
 
 ```bash
-node scripts/optimize-images.mjs   # očekuje originale u /tmp/scrape/raw
+node scripts/optimize-images.mjs   # originali sa starog sajta, iz /tmp/scrape/raw
+node scripts/import-fleet.mjs      # prva serija fotografija po vozilu, iz foldera klijenta
+node scripts/import-fleet-v2.mjs   # druga serija + zajedničke slike za carousel
 node scripts/make-logo.mjs         # transparentni logo + WebP varijante
 ```
 
-Vozilo `NS 797-ZV` (Van Hool Astromega) nema fotografije na starom sajtu — kartica koristi rezervnu sliku. Dodajte putanje u `vehicles` u `src/lib/site.ts` kada slike budu dostupne.
+Import skripte numerišu fotografije po imenu fajla (`ns-884-rt-1`, `-2`, …) i preskaču duplikate. Raspoređivanje na „spolja" i „unutra", kao i izbor naslovne slike, radi se ručno u `vehicles` u `src/lib/site.ts` — skripta ne može da razlikuje enterijer od eksterijera.
+
+Bez fotografija su još `NS 880-RT` i `NS 882-RT` (VW Crafter), `NS 900-RT` (Škoda Superb) i `NS 909-RT` (Škoda Kodiaq); njihove kartice prikazuju „Fotografije u pripremi".
+
+## Raspored sedenja
+
+Šeme u `seatPlans` (`src/lib/site.ts`) prepisane su red po red iz klijentove tabele „Raspored sedenja RENTAL TRAVEL". Svaki red je `row(levo, desno)` — broj sedišta sa te strane prolaza ili ono što stoji umesto njih (`door`, `stairs`, `toilet`, `table`, `kitchen`, `guide`, `driver`, `codriver`), a `back` je klupa preko celog zadnjeg dela. Mesta za vodiče i suvozača se crtaju, ali se ne broje, pa zbir uvek odgovara komercijalnom kapacitetu iz `seats`.
+
+Vozila bez tabele (`NS 915-RT`, `NS 884-RT`) prikazuju broj mesta bez šeme. Minibusevi koriste `approximatePlan`, pa ispod šeme stoji napomena da je raspored informativan.
 
 ## Optimizacija
 

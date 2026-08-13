@@ -21,7 +21,7 @@ const PACKAGES = [
   },
   {
     name: "Autobus",
-    capacity: "47 — 83",
+    capacity: "47 — 87",
     unit: "mesta",
     href: "/iznajmite-autobus",
     icon: IconBus,
