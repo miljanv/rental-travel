@@ -7,13 +7,13 @@ import { IconBus, IconCar, IconCheck, IconSeat } from "@/components/ui/Icons";
 const PACKAGES = [
   {
     name: "Minibus",
-    capacity: "18 — 19",
+    capacity: "8 — 20",
     unit: "mesta",
     href: "/iznajmite-minibus",
     icon: IconSeat,
     features: [
-      "Mercedes Sprinter turističke klase",
-      "Idealno za manje grupe i gradske ture",
+      "Mercedes Sprinter i Volkswagen Crafter",
+      "Kombi vozila za grupe do 8 putnika",
       "Klimatizovan prostor za putnike",
       "Dostupno 24/7",
     ],
@@ -26,7 +26,7 @@ const PACKAGES = [
     href: "/iznajmite-autobus",
     icon: IconBus,
     features: [
-      "VDL i Van Hool turistička klasa",
+      "Solo i dabldeker autobusi VDL i Van Hool",
       "Putovanja, ekskurzije, team building",
       "Prevoz sportista, dece i radnika",
       "Dostupno 24/7",

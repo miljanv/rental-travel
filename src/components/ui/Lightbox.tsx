@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { IconArrowLeft, IconArrowRight } from "@/components/ui/Icons";
+import { Modal } from "@/components/ui/Modal";
 
 type LightboxProps = {
   images: string[];
@@ -19,60 +19,28 @@ export function Lightbox({
   onClose,
 }: LightboxProps) {
   const [index, setIndex] = useState(startIndex);
-  const [mounted, setMounted] = useState(false);
 
   const move = useCallback(
-    (step: number) => setIndex((i) => (i + step + images.length) % images.length),
+    (step: number) =>
+      setIndex((i) => (i + step + images.length) % images.length),
     [images.length]
   );
 
   useEffect(() => {
-    // Portal target only exists on the client.
-    const frame = requestAnimationFrame(() => setMounted(true));
-    return () => cancelAnimationFrame(frame);
-  }, []);
-
-  useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
       if (event.key === "ArrowRight") move(1);
       if (event.key === "ArrowLeft") move(-1);
     };
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [move, onClose]);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [move]);
 
-  if (!mounted) return null;
-
-  // Rendered on <body> because reveal wrappers use `will-change`, which turns
-  // them into containing blocks for fixed-position descendants.
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-      className="fixed inset-0 z-[80] flex flex-col bg-ink"
-      onClick={onClose}
+  return (
+    <Modal
+      label={title ?? "Galerija"}
+      onClose={onClose}
+      closeLabel="Zatvori galeriju"
     >
-      <div className="flex shrink-0 items-center justify-between px-5 py-5 lg:px-10">
-        <p className="font-label text-[13px] tracking-[0.2em] text-white/70 uppercase">
-          {title}
-        </p>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Zatvori galeriju"
-          className="group relative size-11"
-        >
-          <span className="absolute top-1/2 left-1/2 block h-px w-7 -translate-x-1/2 rotate-45 bg-white transition-colors group-hover:bg-brand" />
-          <span className="absolute top-1/2 left-1/2 block h-px w-7 -translate-x-1/2 -rotate-45 bg-white transition-colors group-hover:bg-brand" />
-        </button>
-      </div>
-
       <div
         className="relative flex flex-1 items-center justify-center px-4 pb-4"
         onClick={(event) => event.stopPropagation()}
@@ -123,7 +91,7 @@ export function Lightbox({
               aria-label={`Slika ${thumbIndex + 1}`}
               aria-current={thumbIndex === index ? "true" : undefined}
               className={
-                "relative size-16 shrink-0 overflow-hidden border transition-colors " +
+                "relative h-16 w-20 shrink-0 overflow-hidden border bg-white/5 transition-colors " +
                 (thumbIndex === index
                   ? "border-brand"
                   : "border-white/20 hover:border-white/60")
@@ -133,14 +101,13 @@ export function Lightbox({
                 src={`${image}-640.webp`}
                 alt=""
                 fill
-                sizes="64px"
-                className="object-cover"
+                sizes="80px"
+                className="object-contain"
               />
             </button>
           ))}
         </div>
       )}
-    </div>,
-    document.body
+    </Modal>
   );
 }

@@ -7,13 +7,13 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Lightbox } from "@/components/ui/Lightbox";
 
 const GALLERY = [
-  "/images/fleet/ns-765-rt-1",
+  "/images/fleet/ns-765-rt-3",
   "/images/fleet/ns-754-rt-1",
-  "/images/fleet/zr-242-hr-2",
+  "/images/fleet/ns-868-rt-2",
   "/images/fleet/ns-785-rt-2",
-  "/images/fleet/ns-837-kl-2",
+  "/images/fleet/ns-871-rt-3",
   "/images/fleet/ns-861-rt-1",
-  "/images/fleet/ns-832-rt-2",
+  "/images/fleet/ns-832-rt-10",
   "/images/fleet/ns-778-rt-3",
 ];
 

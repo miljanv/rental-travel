@@ -1,7 +1,7 @@
 import type { Vehicle } from "@/lib/site";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { VehicleCard } from "@/components/fleet/VehicleCard";
+import { FleetGrid } from "@/components/fleet/FleetGrid";
 import { IconCheck } from "@/components/ui/Icons";
 
 type FleetSectionProps = {
@@ -68,24 +68,11 @@ export function FleetSection({
         </div>
       </section>
 
-      <section className="bg-sand-light py-24 lg:py-32">
-        <div className="shell">
-          <SectionHeading
-            eyebrow="Naša vozila"
-            title="Izaberite vozilo iz naše flote"
-            text="Kliknite na sliku za galeriju. Za rezervaciju i ponudu pozovite nas ili pošaljite upit."
-            align="center"
-          />
-
-          <div className="mt-16 grid gap-8 sm:grid-cols-2 xl:grid-cols-3">
-            {vehicles.map((vehicle, index) => (
-              <Reveal key={vehicle.slug} delay={(index % 3) * 110}>
-                <VehicleCard vehicle={vehicle} index={index} />
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
+      <FleetGrid
+        title="Izaberite vozilo iz naše flote"
+        text="Kliknite na sliku za galeriju. Za rezervaciju i ponudu pozovite nas ili pošaljite upit."
+        vehicles={vehicles}
+      />
     </>
   );
 }

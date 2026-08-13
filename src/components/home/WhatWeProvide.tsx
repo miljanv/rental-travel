@@ -12,7 +12,7 @@ export function WhatWeProvide() {
         <div className="relative">
           <Reveal variant="mask" className="relative aspect-[4/5] w-full">
             <Image
-              src="/images/fleet/ns-765-rt-5-1024.webp"
+              src="/images/fleet/ns-765-rt-12-1024.webp"
               alt="Autobus Rental Travel"
               fill
               sizes="(max-width: 1024px) 100vw, 50vw"
@@ -27,7 +27,7 @@ export function WhatWeProvide() {
           >
             <div className="relative aspect-[4/3] w-full border-8 border-white shadow-xl">
               <Image
-                src="/images/fleet/ns-785-rt-4-640.webp"
+                src="/images/fleet/ns-785-rt-2-640.webp"
                 alt="Unutrašnjost autobusa Rental Travel"
                 fill
                 sizes="300px"

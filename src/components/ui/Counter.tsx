@@ -17,7 +17,9 @@ export function Counter({
   raw = false,
 }: CounterProps) {
   const ref = useRef<HTMLSpanElement>(null);
-  const [display, setDisplay] = useState(raw ? value : 0);
+  // Starts at the final value so crawlers and no-JS visitors get the real
+  // number; the count-up rewinds to zero once the observer is attached.
+  const [display, setDisplay] = useState(value);
 
   useEffect(() => {
     const node = ref.current;
@@ -27,15 +29,21 @@ export function Counter({
       typeof IntersectionObserver === "undefined" ||
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ) {
-      const frame = requestAnimationFrame(() => setDisplay(value));
-      return () => cancelAnimationFrame(frame);
+      return;
     }
 
     let frame = 0;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (!entries[0]?.isIntersecting) return;
+        const entry = entries[0];
+        if (!entry) return;
+
+        if (!entry.isIntersecting) {
+          setDisplay(0);
+          return;
+        }
         observer.disconnect();
+        setDisplay(0);
 
         const start = performance.now();
         const step = (now: number) => {

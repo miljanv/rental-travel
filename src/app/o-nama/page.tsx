@@ -22,7 +22,7 @@ export default function AboutPage() {
         eyebrow="Rental travel"
         title="O nama"
         text="Sa željom da olakšamo i ubrzamo organizaciju putovanja, 2023. godine osnovali smo preduzeće Rental Travel DOO."
-        image="/images/fleet/ns-765-rt-5-1600.webp"
+        image="/images/fleet/ns-778-rt-1-1600.webp"
         breadcrumb="O nama"
       />
 
@@ -31,7 +31,7 @@ export default function AboutPage() {
           <div className="relative">
             <Reveal variant="mask" className="relative aspect-[4/5] w-full">
               <Image
-                src="/images/fleet/ns-765-rt-5-1024.webp"
+                src="/images/fleet/ns-765-rt-12-1024.webp"
                 alt="Autobus Rental Travel"
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"

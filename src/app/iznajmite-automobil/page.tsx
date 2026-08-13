@@ -6,7 +6,8 @@ import { Advantages } from "@/components/home/Advantages";
 import { Reveal } from "@/components/ui/Reveal";
 import { ButtonLink } from "@/components/ui/Button";
 import { IconCheck } from "@/components/ui/Icons";
-import { site } from "@/lib/site";
+import { FleetGrid } from "@/components/fleet/FleetGrid";
+import { carVehicles, site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Iznajmite Automobil",
@@ -31,7 +32,7 @@ export default function CarRentalPage() {
         eyebrow="Rental travel"
         title="Iznajmite Automobil"
         text="Širok izbor pouzdanih i redovno održavanih vozila za kratkoročno i dugoročno iznajmljivanje."
-        image="/images/hero/profilna-wide-1600.webp"
+        image="/images/hero/auto-wide-1600.webp"
         breadcrumb="Iznajmite Automobil"
       />
 
@@ -86,7 +87,7 @@ export default function CarRentalPage() {
           <div className="relative order-1 lg:order-2">
             <Reveal variant="mask" className="relative aspect-[4/3] w-full">
               <Image
-                src="/images/hero/profilna-wide-1024.webp"
+                src="/images/hero/auto-1024.webp"
                 alt="Iznajmljivanje automobila — Rental Travel"
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
@@ -102,6 +103,12 @@ export default function CarRentalPage() {
           </div>
         </div>
       </section>
+
+      <FleetGrid
+        title="Automobili u našoj floti"
+        text="Za rezervaciju i cenu najma pozovite nas ili pošaljite upit — odgovaramo u najkraćem roku."
+        vehicles={carVehicles}
+      />
 
       <Advantages />
       <CtaBanner />

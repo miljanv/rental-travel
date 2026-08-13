@@ -65,8 +65,8 @@ export const categories: ServiceCategory[] = [
     shortTitle: "Minibus",
     href: "/iznajmite-minibus",
     excerpt:
-      "Mercedes Sprinter minibusevi turističke klase sa 18 i 19 mesta — idealni za manje grupe i gradske ture.",
-    image: "/images/fleet/ns-837-kl-1-1600.webp",
+      "Minibusevi i kombi vozila do 20 mesta — idealni za manje grupe, gradske ture i transfere.",
+    image: "/images/fleet/ns-871-rt-3-1600.webp",
   },
   {
     slug: "transferi-aerodrom",
@@ -88,96 +88,216 @@ export const categories: ServiceCategory[] = [
   },
 ];
 
+export type FleetClass =
+  | "dabldeker"
+  | "solo"
+  | "minibus"
+  | "kombi"
+  | "automobil";
+
+export const fleetClasses: Record<
+  FleetClass,
+  {
+    label: string;
+    /** Used on the card when a vehicle's exact seat count is not confirmed. */
+    capacity?: string;
+  }
+> = {
+  dabldeker: { label: "Dabldeker autobus", capacity: "78+ mesta" },
+  solo: { label: "Solo autobus", capacity: "47 — 63 mesta" },
+  minibus: { label: "Minibus", capacity: "do 20 mesta" },
+  kombi: { label: "Kombi vozilo", capacity: "do 8 mesta" },
+  automobil: { label: "Putničko vozilo" },
+};
+
+export type PhotoView = "exterior" | "interior";
+
+export type VehiclePhoto = {
+  src: string;
+  view: PhotoView;
+};
+
+export const photoViews: Record<PhotoView, string> = {
+  exterior: "Spolja",
+  interior: "Unutra",
+};
+
+/** A row of seats on either side of the aisle. */
+export type SeatRow = { left: number; right: number };
+
+export type SeatDeck = {
+  label?: string;
+  rows: SeatRow[];
+  /** Wider bench across the back of the deck. */
+  back: number;
+  /** An upper deck is reached by stairs and has neither driver nor doors. */
+  front: "driver" | "stairs";
+};
+
+export type SeatPlan = { decks: SeatDeck[] };
+
 export type Vehicle = {
   slug: string;
   brand: string;
   model: string;
   plate: string;
-  seats: number;
-  category: "autobus" | "minibus";
-  klasa: string;
+  /** Exact capacity, where confirmed. Otherwise the class range is shown. */
+  seats?: number;
+  fleetClass: FleetClass;
   description: string;
-  images: string[];
+  photos: VehiclePhoto[];
+  /** Only for vehicles whose seat count is confirmed. */
+  seatPlan?: SeatPlan;
 };
 
+export function vehicleCapacity(vehicle: Vehicle) {
+  return vehicle.seats
+    ? `${vehicle.seats} mesta`
+    : fleetClasses[vehicle.fleetClass].capacity;
+}
+
+/**
+ * Photo files are produced by `scripts/import-fleet.mjs` as `<plate>-<n>`.
+ * Grouping them is manual because the import cannot tell an exterior shot from
+ * an interior one; the first exterior becomes the card cover and the order
+ * within each group drives the guided tour.
+ */
+function photos(
+  plate: string,
+  groups: { exterior?: number[]; interior?: number[] }
+): VehiclePhoto[] {
+  const pick = (indices: number[] = [], view: PhotoView) =>
+    indices.map((n) => ({ src: `/images/fleet/${plate}-${n}`, view }));
+
+  return [
+    ...pick(groups.exterior, "exterior"),
+    ...pick(groups.interior, "interior"),
+  ];
+}
+
+/**
+ * Approximate 2+2 layout derived from the seat count: full rows of four, one
+ * shorter row where the middle door sits, and a wider bench at the back. Good
+ * enough to show a group how the vehicle is arranged, but every plan needs a
+ * check against the real vehicle before it can be called exact.
+ */
+function deck(
+  total: number,
+  back: number,
+  label?: string,
+  front: SeatDeck["front"] = "driver"
+): SeatDeck {
+  const rows: SeatRow[] = [];
+  const remaining = total - back;
+  const fullRows = Math.floor(remaining / 4);
+  const rest = remaining % 4;
+
+  for (let i = 0; i < fullRows; i += 1) rows.push({ left: 2, right: 2 });
+
+  if (rest > 0) {
+    // Seats come off the door side, which is the right-hand one on our vehicles.
+    const left = Math.min(rest, 2);
+    rows.splice(Math.ceil(fullRows * 0.6), 0, { left, right: rest - left });
+  }
+
+  return { label, rows, back, front };
+}
+
+export function deckSeats(value: SeatDeck) {
+  return value.rows.reduce((sum, row) => sum + row.left + row.right, 0) + value.back;
+}
+
+const coachPlan = (seats: number): SeatPlan => ({ decks: [deck(seats, 5)] });
+const minibusPlan = (seats: number): SeatPlan => ({ decks: [deck(seats, 4)] });
+
+/** The lower-deck share is the usual VDL split; correct it once measured. */
+const doubleDeckPlan = (seats: number, lower = 19): SeatPlan => ({
+  decks: [
+    deck(lower, 5, "Donja etaža"),
+    deck(seats - lower, 5, "Gornja etaža", "stairs"),
+  ],
+});
+
 export const vehicles: Vehicle[] = [
-  {
-    slug: "vdl-berkhof-ns-832-rt",
-    brand: "VDL",
-    model: "Berkhof",
-    plate: "NS 832-RT",
-    seats: 51,
-    category: "autobus",
-    klasa: "Turistička klasa",
-    description:
-      "Autobus turističke klase sa 51 komercijalnim mestom za putnike.",
-    images: [
-      "/images/fleet/ns-832-rt-1",
-      "/images/fleet/ns-832-rt-2",
-    ],
-  },
-  {
-    slug: "van-hool-zr-242-hr",
-    brand: "Van Hool",
-    model: "Van Hool",
-    plate: "ZR 242-HR",
-    seats: 57,
-    category: "autobus",
-    klasa: "Turistička klasa",
-    description:
-      "Autobus turističke klase sa 57 komercijalnih mesta za putnike.",
-    images: [
-      "/images/fleet/zr-242-hr-1",
-      "/images/fleet/zr-242-hr-2",
-      "/images/fleet/zr-242-hr-3",
-    ],
-  },
-  {
-    slug: "vdl-megiq-ns-754-rt",
-    brand: "VDL",
-    model: "MegIQ",
-    plate: "NS 754-RT",
-    seats: 63,
-    category: "autobus",
-    klasa: "Turistička klasa",
-    description:
-      "Autobus turističke klase sa 63 komercijalnih mesta za putnike.",
-    images: [
-      "/images/fleet/ns-754-rt-1",
-      "/images/fleet/ns-754-rt-2",
-      "/images/fleet/ns-754-rt-3",
-      "/images/fleet/ns-754-rt-4",
-    ],
-  },
   {
     slug: "vdl-synergy-ns-765-rt",
     brand: "VDL",
     model: "Synergy",
     plate: "NS 765-RT",
     seats: 83,
-    category: "autobus",
-    klasa: "Dupla etaža",
+    fleetClass: "dabldeker",
     description:
-      "Autobus turističke klase sa 83 komercijalnih mesta za putnike.",
-    images: [
-      "/images/fleet/ns-765-rt-1",
-      "/images/fleet/ns-765-rt-2",
-      "/images/fleet/ns-765-rt-3",
-      "/images/fleet/ns-765-rt-4",
-      "/images/fleet/ns-765-rt-5",
-    ],
+      "Dabldeker autobus turističke klase sa 83 komercijalna mesta za putnike.",
+    photos: photos("ns-765-rt", {
+      exterior: [9, 6, 12, 10, 3, 11],
+      interior: [4, 5, 8, 2, 1, 7],
+    }),
+    seatPlan: doubleDeckPlan(83),
   },
   {
-    slug: "van-hool-astromega-ns-797-zv",
-    brand: "Van Hool",
-    model: "Astromega",
-    plate: "NS 797-ZV",
-    seats: 63,
-    category: "autobus",
-    klasa: "Dupla etaža",
+    slug: "vdl-synergy-ns-915-rt",
+    brand: "VDL",
+    model: "Synergy",
+    plate: "NS 915-RT",
+    fleetClass: "dabldeker",
     description:
-      "Autobus turističke klase sa 63 komercijalnih mesta za putnike.",
-    images: [],
+      "Dabldeker autobus turističke klase na dve etaže, za velike grupe putnika.",
+    photos: [],
+  },
+  {
+    slug: "van-hool-ns-878-rt",
+    brand: "Van Hool",
+    model: "Van Hool",
+    plate: "NS 878-RT",
+    fleetClass: "dabldeker",
+    description:
+      "Dabldeker autobus turističke klase sa dve etaže i velikim prtljažnim prostorom.",
+    photos: [],
+  },
+  {
+    slug: "vdl-magiq-ns-754-rt",
+    brand: "VDL",
+    model: "MagiQ",
+    plate: "NS 754-RT",
+    seats: 63,
+    fleetClass: "solo",
+    description:
+      "Autobus turističke klase sa 63 komercijalna mesta za putnike.",
+    photos: photos("ns-754-rt", {
+      exterior: [1, 7, 8, 4, 6],
+      interior: [3, 5, 2],
+    }),
+    seatPlan: coachPlan(63),
+  },
+  {
+    slug: "vdl-berkhof-ns-832-rt",
+    brand: "VDL",
+    model: "Berkhof",
+    plate: "NS 832-RT",
+    seats: 51,
+    fleetClass: "solo",
+    description:
+      "Autobus turističke klase sa 51 komercijalnim mestom za putnike.",
+    photos: photos("ns-832-rt", {
+      exterior: [10, 11, 9, 8, 1, 7, 6, 2],
+      interior: [5, 12, 3, 4],
+    }),
+    seatPlan: coachPlan(51),
+  },
+  {
+    slug: "van-hool-ns-868-rt",
+    brand: "Van Hool",
+    model: "Van Hool",
+    plate: "NS 868-RT",
+    seats: 57,
+    fleetClass: "solo",
+    description:
+      "Autobus turističke klase sa 57 komercijalnih mesta za putnike.",
+    photos: photos("ns-868-rt", {
+      exterior: [4, 2, 3, 5, 6],
+      interior: [1],
+    }),
+    seatPlan: coachPlan(57),
   },
   {
     slug: "vdl-jonckheere-ns-778-rt",
@@ -185,15 +305,14 @@ export const vehicles: Vehicle[] = [
     model: "Jonckheere",
     plate: "NS 778-RT",
     seats: 47,
-    category: "autobus",
-    klasa: "Sportisti, deca, radnici",
+    fleetClass: "solo",
     description:
       "Autobus za prevoz sportista, dece i radnika sa 47 komercijalnih mesta za sedenje.",
-    images: [
-      "/images/fleet/ns-778-rt-1",
-      "/images/fleet/ns-778-rt-2",
-      "/images/fleet/ns-778-rt-3",
-    ],
+    photos: photos("ns-778-rt", {
+      exterior: [3, 5, 1, 2, 4, 11],
+      interior: [6, 12, 7, 9, 10, 8],
+    }),
+    seatPlan: coachPlan(47),
   },
   {
     slug: "vdl-jonckheere-ns-785-rt",
@@ -201,32 +320,21 @@ export const vehicles: Vehicle[] = [
     model: "Jonckheere",
     plate: "NS 785-RT",
     seats: 47,
-    category: "autobus",
-    klasa: "Sportisti, deca, radnici",
+    fleetClass: "solo",
     description:
       "Autobus za prevoz sportista, dece i radnika sa 47 komercijalnih mesta za sedenje.",
-    images: [
-      "/images/fleet/ns-785-rt-1",
-      "/images/fleet/ns-785-rt-2",
-      "/images/fleet/ns-785-rt-3",
-      "/images/fleet/ns-785-rt-4",
-    ],
+    photos: photos("ns-785-rt", { exterior: [1, 3], interior: [2] }),
+    seatPlan: coachPlan(47),
   },
   {
-    slug: "mercedes-sprinter-ns-837-kl",
-    brand: "Mercedes",
-    model: "Sprinter",
-    plate: "NS 837-KL",
-    seats: 19,
-    category: "minibus",
-    klasa: "Turistička klasa",
+    slug: "vdl-jonckheere-ns-884-rt",
+    brand: "VDL",
+    model: "Jonckheere",
+    plate: "NS 884-RT",
+    fleetClass: "solo",
     description:
-      "Minibus turističke klase sa 19 komercijalnih mesta za putnike.",
-    images: [
-      "/images/fleet/ns-837-kl-1",
-      "/images/fleet/ns-837-kl-2",
-      "/images/fleet/ns-837-kl-3",
-    ],
+      "Solo autobus turističke klase za grupna putovanja i ugovoreni prevoz.",
+    photos: [],
   },
   {
     slug: "mercedes-sprinter-ns-858-rt",
@@ -234,14 +342,11 @@ export const vehicles: Vehicle[] = [
     model: "Sprinter",
     plate: "NS 858-RT",
     seats: 18,
-    category: "minibus",
-    klasa: "Turistička klasa",
+    fleetClass: "minibus",
     description:
       "Minibus turističke klase sa 18 komercijalnih mesta za putnike.",
-    images: [
-      "/images/fleet/ns-858-rt-1",
-      "/images/fleet/ns-858-rt-2",
-    ],
+    photos: photos("ns-858-rt", { exterior: [2, 1], interior: [3] }),
+    seatPlan: minibusPlan(18),
   },
   {
     slug: "mercedes-sprinter-ns-861-rt",
@@ -249,14 +354,71 @@ export const vehicles: Vehicle[] = [
     model: "Sprinter",
     plate: "NS 861-RT",
     seats: 19,
-    category: "minibus",
-    klasa: "Turistička klasa",
+    fleetClass: "minibus",
     description:
       "Minibus turističke klase sa 19 komercijalnih mesta za putnike.",
-    images: [
-      "/images/fleet/ns-861-rt-1",
-      "/images/fleet/ns-861-rt-2",
-    ],
+    photos: photos("ns-861-rt", { exterior: [1, 2] }),
+    seatPlan: minibusPlan(19),
+  },
+  {
+    slug: "mercedes-sprinter-ns-871-rt",
+    brand: "Mercedes",
+    model: "Sprinter",
+    plate: "NS 871-RT",
+    fleetClass: "minibus",
+    description:
+      "Minibus turističke klase za manje grupe, ekskurzije i gradske ture.",
+    photos: photos("ns-871-rt", { exterior: [3, 1, 2], interior: [4, 5] }),
+  },
+  {
+    slug: "volkswagen-crafter-ns-880-rt",
+    brand: "Volkswagen",
+    model: "Crafter",
+    plate: "NS 880-RT",
+    fleetClass: "minibus",
+    description:
+      "Minibus za manje grupe — ekskurzije, dnevne ture i transferi.",
+    photos: [],
+  },
+  {
+    slug: "volkswagen-crafter-ns-882-rt",
+    brand: "Volkswagen",
+    model: "Crafter",
+    plate: "NS 882-RT",
+    fleetClass: "minibus",
+    description:
+      "Minibus za manje grupe — ekskurzije, dnevne ture i transferi.",
+    photos: [],
+  },
+  {
+    slug: "mercedes-sprinter-ns-890-rt",
+    brand: "Mercedes",
+    model: "Sprinter",
+    plate: "NS 890-RT",
+    fleetClass: "kombi",
+    description:
+      "Kombi vozilo do 8 mesta — transferi do aerodroma i poslovni prevoz.",
+    photos: [],
+  },
+  {
+    slug: "skoda-superb-ns-900-rt",
+    brand: "Škoda",
+    model: "Superb",
+    plate: "NS 900-RT",
+    fleetClass: "automobil",
+    description:
+      "Putničko vozilo za poslovna putovanja, transfere i svakodnevne obaveze.",
+    photos: [],
+  },
+  {
+    slug: "skoda-kodiaq-ns-909-rt",
+    brand: "Škoda",
+    model: "Kodiaq",
+    plate: "NS 909-RT",
+    fleetClass: "automobil",
+    description:
+      "Prostran SUV za putovanja, odmor i duže rute sa više prtljaga.",
+    photos: [],
   },
 ];
 
@@ -267,8 +429,18 @@ export function vehicleTitle(vehicle: Vehicle) {
     : `${vehicle.brand} ${vehicle.model}`;
 }
 
-export const busVehicles = vehicles.filter((v) => v.category === "autobus");
-export const minibusVehicles = vehicles.filter((v) => v.category === "minibus");
+/** Grids lead with the largest class, so the two-deckers come first. */
+export const busVehicles = [
+  ...vehicles.filter((v) => v.fleetClass === "dabldeker"),
+  ...vehicles.filter((v) => v.fleetClass === "solo"),
+];
+
+export const minibusVehicles = [
+  ...vehicles.filter((v) => v.fleetClass === "minibus"),
+  ...vehicles.filter((v) => v.fleetClass === "kombi"),
+];
+
+export const carVehicles = vehicles.filter((v) => v.fleetClass === "automobil");
 
 export const busServices = [
   "prevoz na turistička putovanja",
@@ -330,7 +502,7 @@ export const advantages: Advantage[] = [
 ];
 
 export const stats = [
-  { value: 10, suffix: "", label: "Vozila u floti" },
+  { value: vehicles.length, suffix: "", label: "Vozila u floti" },
   { value: 2023, suffix: "", label: "Godina osnivanja", raw: true },
   { value: 24, suffix: "/7", label: "Dostupnost" },
   { value: 500, suffix: "+", label: "Zadovoljnih grupa" },

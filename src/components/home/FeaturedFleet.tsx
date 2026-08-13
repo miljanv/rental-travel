@@ -6,9 +6,9 @@ import { VehicleCard } from "@/components/fleet/VehicleCard";
 
 const featured = [
   "vdl-synergy-ns-765-rt",
-  "vdl-megiq-ns-754-rt",
+  "vdl-magiq-ns-754-rt",
   "vdl-berkhof-ns-832-rt",
-  "mercedes-sprinter-ns-837-kl",
+  "mercedes-sprinter-ns-871-rt",
 ].map((slug) => vehicles.find((vehicle) => vehicle.slug === slug)!);
 
 export function FeaturedFleet() {
