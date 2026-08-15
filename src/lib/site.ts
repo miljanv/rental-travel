@@ -120,29 +120,32 @@ export const photoViews: Record<PhotoView, string> = {
 };
 
 /**
- * What occupies one side of the aisle in a row: a number of seats, or a fixture
- * that takes their place. Crew seats next to the driver are not drawn, so the
- * seat total always matches the capacity we advertise.
+ * What occupies one side of the aisle in a row. Seat numbers match the
+ * operator's own diagrams (window first, then aisle). Crew and guide seats
+ * are drawn but not counted, so the total always matches advertised capacity.
  */
-export type SeatCell =
-  | number
+export type SeatFixture =
   | "driver"
   | "codriver"
   | "door"
   | "stairs"
   | "toilet"
   | "table"
-  | "kitchen"
+  | "kitchen";
+
+export type SeatCell =
+  | number[]
+  | SeatFixture
   /** Narrow fold-down seats for tour guides, outside the commercial count. */
-  | "guide";
+  | { guide: number[] };
 
 export type SeatRow = { left: SeatCell; right: SeatCell };
 
 export type SeatDeck = {
   label?: string;
   rows: SeatRow[];
-  /** Wider bench across the back of the deck, spanning the aisle. */
-  back: number;
+  /** Rear bench, left to right, spanning the aisle. */
+  back: number[];
 };
 
 export type SeatPlan = {
@@ -192,21 +195,31 @@ function photos(
 
 /** Shorthands that keep the seat maps below readable. */
 const row = (left: SeatCell, right: SeatCell): SeatRow => ({ left, right });
-const full = (count: number) => Array.from({ length: count }, () => row(2, 2));
+
+/** Excel columns A, B, D, E → window-first pairs on each side of the aisle. */
+const pair = (a: number, b: number, d: number, e: number) =>
+  row([a, b], [e, d]);
+
+export function isSeatIds(cell: SeatCell): cell is number[] {
+  return Array.isArray(cell);
+}
+
+export function isGuide(cell: SeatCell): cell is { guide: number[] } {
+  return typeof cell === "object" && !Array.isArray(cell) && "guide" in cell;
+}
 
 export function deckSeats(value: SeatDeck) {
-  const cell = (side: SeatCell) => (typeof side === "number" ? side : 0);
+  const cell = (side: SeatCell) => (isSeatIds(side) ? side.length : 0);
   return (
     value.rows.reduce((sum, r) => sum + cell(r.left) + cell(r.right), 0) +
-    value.back
+    value.back.length
   );
 }
 
 /**
  * Seat maps below are transcribed from the operator's own diagrams, row by row,
- * so they match the numbered seats in the vehicle. Rows read from the front:
- * `row(left, right)` is what sits on each side of the aisle, `back` is the rear
- * bench that spans it.
+ * including the numbered seats. `pair(A, B, D, E)` is one Excel row; `back` is
+ * the rear bench left to right.
  */
 const seatPlans = {
   /** NS 765-RT, VDL Synergy: 20 seats downstairs, 63 upstairs. */
@@ -216,59 +229,83 @@ const seatPlans = {
         label: "Donja etaža",
         rows: [
           row("driver", "codriver"),
-          row(2, 2),
+          pair(1, 2, 3, 4),
           row("table", "table"),
-          ...full(4),
+          pair(5, 6, 7, 8),
+          pair(9, 10, 11, 12),
+          pair(13, 14, 15, 16),
+          pair(17, 18, 19, 20),
           row("toilet", "stairs"),
         ],
-        back: 0,
+        back: [],
       },
       {
         label: "Gornja etaža",
         rows: [
-          row(2, 2),
-          row(2, "stairs"),
-          ...full(7),
-          row(2, "stairs"),
-          ...full(3),
-          row(2, 0),
-          ...full(2),
+          pair(21, 22, 23, 24),
+          row([25, 26], "stairs"),
+          pair(27, 28, 31, 32),
+          pair(29, 30, 35, 36),
+          pair(33, 34, 39, 40),
+          pair(37, 38, 43, 44),
+          pair(41, 42, 47, 48),
+          pair(45, 46, 51, 52),
+          pair(49, 50, 55, 56),
+          row([53, 54], "stairs"),
+          pair(57, 58, 61, 62),
+          pair(59, 60, 65, 66),
+          pair(63, 64, 69, 70),
+          row([67, 68], []),
+          pair(71, 72, 73, 74),
+          pair(75, 76, 77, 78),
         ],
-        back: 5,
+        back: [79, 80, 83, 81, 82],
       },
     ],
   },
 
-  /** NS 878-RT, Van Hool: 24 seats downstairs plus two guide seats, 63 upstairs. */
+  /** NS 878-RT, Van Hool: 24 seats downstairs plus two numbered guide seats, 63 upstairs. */
   ns878: {
     decks: [
       {
         label: "Donja etaža",
         rows: [
           row("driver", "codriver"),
-          row("guide", "stairs"),
+          row({ guide: [1, 2] }, "stairs"),
           row("kitchen", "kitchen"),
-          row(2, 2),
+          pair(3, 4, 5, 6),
           row("table", "table"),
-          ...full(5),
+          pair(7, 8, 9, 10),
+          pair(11, 12, 13, 14),
+          pair(15, 16, 17, 18),
+          pair(19, 20, 21, 22),
+          pair(23, 24, 25, 26),
           row("toilet", "stairs"),
         ],
-        back: 0,
+        back: [],
       },
       {
         label: "Gornja etaža",
         rows: [
-          row(2, 2),
-          row(2, "stairs"),
-          ...full(1),
-          row(0, 2),
-          ...full(6),
-          row(2, "stairs"),
-          row(2, 0),
-          ...full(4),
-          row(0, 2),
+          pair(27, 28, 29, 30),
+          row([31, 32], "stairs"),
+          pair(33, 34, 35, 36),
+          row([], [40, 39]),
+          pair(37, 38, 43, 44),
+          pair(41, 42, 47, 48),
+          pair(45, 46, 51, 52),
+          pair(49, 50, 55, 56),
+          pair(53, 54, 59, 60),
+          pair(57, 58, 63, 64),
+          row([61, 62], "stairs"),
+          row([65, 66], []),
+          pair(67, 68, 69, 70),
+          pair(71, 72, 73, 74),
+          pair(75, 76, 77, 78),
+          pair(79, 80, 81, 82),
+          row([], [84, 83]),
         ],
-        back: 5,
+        back: [85, 86, 87, 88, 89],
       },
     ],
   },
@@ -277,8 +314,25 @@ const seatPlans = {
   ns754: {
     decks: [
       {
-        rows: [row("driver", "door"), ...full(6), row(2, "door"), ...full(8)],
-        back: 5,
+        rows: [
+          row("driver", "door"),
+          pair(1, 2, 3, 4),
+          pair(5, 6, 7, 8),
+          pair(9, 10, 11, 12),
+          pair(13, 14, 15, 16),
+          pair(17, 18, 19, 20),
+          pair(21, 22, 23, 24),
+          row([25, 26], "door"),
+          pair(29, 30, 27, 28),
+          pair(33, 34, 31, 32),
+          pair(37, 38, 35, 36),
+          pair(41, 42, 39, 40),
+          pair(43, 44, 45, 46),
+          pair(47, 48, 49, 50),
+          pair(51, 52, 53, 54),
+          pair(55, 56, 57, 58),
+        ],
+        back: [59, 60, 63, 61, 62],
       },
     ],
   },
@@ -289,12 +343,22 @@ const seatPlans = {
       {
         rows: [
           row("driver", "door"),
-          ...full(8),
-          row(2, "door"),
-          ...full(4),
-          row(0, 2),
+          pair(3, 4, 1, 2),
+          pair(7, 8, 5, 6),
+          pair(11, 12, 9, 10),
+          pair(15, 16, 13, 14),
+          pair(19, 20, 17, 18),
+          pair(23, 24, 21, 22),
+          pair(27, 28, 25, 26),
+          pair(29, 30, 49, 50),
+          row([31, 32], "door"),
+          pair(33, 34, 35, 36),
+          pair(37, 38, 39, 40),
+          pair(41, 42, 43, 44),
+          pair(45, 46, 47, 48),
+          row([], [52, 51]),
         ],
-        back: 5,
+        back: [53, 54, 57, 55, 56],
       },
     ],
   },
@@ -305,12 +369,22 @@ const seatPlans = {
       {
         rows: [
           row("driver", "door"),
-          ...full(7),
-          row(2, "door"),
-          row(2, 0),
-          ...full(5),
+          pair(3, 4, 1, 2),
+          pair(7, 8, 5, 6),
+          pair(11, 12, 9, 10),
+          pair(15, 16, 13, 14),
+          pair(19, 20, 17, 18),
+          pair(23, 24, 21, 22),
+          pair(27, 28, 25, 26),
+          row([29, 30], "door"),
+          row([31, 32], []),
+          pair(33, 34, 35, 36),
+          pair(37, 38, 39, 40),
+          pair(41, 42, 43, 44),
+          pair(45, 46, 47, 48),
+          pair(49, 50, 51, 52),
         ],
-        back: 5,
+        back: [53, 54, 55, 56, 57],
       },
     ],
   },
@@ -321,13 +395,21 @@ const seatPlans = {
       {
         rows: [
           row("driver", "door"),
-          ...full(6),
-          row(0, "toilet"),
+          pair(1, 2, 3, 4),
+          pair(5, 6, 7, 8),
+          pair(9, 10, 11, 12),
+          pair(13, 14, 15, 16),
+          pair(17, 18, 19, 20),
+          pair(21, 22, 23, 24),
+          row([], "toilet"),
           row("table", "door"),
-          row(2, 0),
-          ...full(4),
+          row([25, 26], []),
+          pair(27, 28, 29, 30),
+          pair(31, 32, 33, 34),
+          pair(35, 36, 37, 38),
+          pair(39, 40, 41, 42),
         ],
-        back: 5,
+        back: [43, 44, 45, 46, 47],
       },
     ],
   },
@@ -336,8 +418,22 @@ const seatPlans = {
   ns832: {
     decks: [
       {
-        rows: [row("driver", "codriver"), ...full(6), row(2, "door"), ...full(5)],
-        back: 5,
+        rows: [
+          row("driver", "codriver"),
+          pair(3, 4, 1, 2),
+          pair(7, 8, 5, 6),
+          pair(11, 12, 9, 10),
+          pair(15, 16, 13, 14),
+          pair(19, 20, 17, 18),
+          pair(23, 24, 21, 22),
+          row([25, 26], "door"),
+          pair(29, 30, 27, 28),
+          pair(33, 34, 31, 32),
+          pair(37, 38, 35, 36),
+          pair(41, 42, 39, 40),
+          pair(45, 46, 43, 44),
+        ],
+        back: [51, 50, 49, 48, 47],
       },
     ],
   },
@@ -350,20 +446,34 @@ const seatPlans = {
  */
 function approximatePlan(seats: number, back: number): SeatPlan {
   const remaining = seats - back;
-  const rows = full(Math.floor(remaining / 4));
+  const fullRows = Math.floor(remaining / 4);
   const rest = remaining % 4;
+  const rows: SeatRow[] = [row("driver", "door")];
+  let next = 1;
+
+  const take = (count: number) =>
+    Array.from({ length: count }, () => {
+      const n = next;
+      next += 1;
+      return n;
+    });
+
+  for (let i = 0; i < fullRows; i += 1) {
+    const [a, b, d, e] = take(4);
+    rows.push(pair(a, b, d, e));
+  }
 
   if (rest > 0) {
-    // Leftover seats sit across from the middle door.
-    rows.splice(
-      Math.ceil(rows.length * 0.6),
-      0,
-      row(Math.min(rest, 2), Math.max(rest - 2, 0))
-    );
+    const ids = take(rest);
+    const left = ids.slice(0, Math.min(rest, 2));
+    const extra = ids.slice(2);
+    const right =
+      extra.length === 2 ? [extra[1], extra[0]] : extra.length === 1 ? extra : [];
+    rows.splice(1 + Math.ceil(fullRows * 0.6), 0, row(left, right));
   }
 
   return {
-    decks: [{ rows: [row("driver", "door"), ...rows], back }],
+    decks: [{ rows, back: take(back) }],
     approximate: true,
   };
 }

@@ -1,13 +1,22 @@
-import { deckSeats, type SeatCell, type SeatDeck, type SeatPlan } from "@/lib/site";
+import type { ReactNode } from "react";
+import {
+  deckSeats,
+  isGuide,
+  isSeatIds,
+  type SeatCell,
+  type SeatDeck,
+  type SeatFixture,
+  type SeatPlan,
+} from "@/lib/site";
 
-const SEAT = 24;
-const PAIR_GAP = 5;
-const AISLE = 22;
+const SEAT = 28;
+const PAIR_GAP = 4;
+const AISLE = 20;
 const PAD = 16;
-const ROW_PITCH = 32;
-const BACK_ROW = 40;
-const FOOT = 14;
-const HEAD = 12;
+const ROW_PITCH = 36;
+const BACK_ROW = 42;
+const FOOT = 16;
+const HEAD = 14;
 
 const CONTENT = SEAT * 4 + PAIR_GAP * 2 + AISLE;
 const WIDTH = CONTENT + PAD * 2;
@@ -22,17 +31,46 @@ const SIDE_X = { left: 0, right: CONTENT - SIDE };
 
 type Side = "left" | "right";
 
-function Seat({ x, y }: { x: number; y: number }) {
+function Seat({
+  x,
+  y,
+  n,
+  dashed,
+  size = SEAT,
+}: {
+  x: number;
+  y: number;
+  n: number;
+  dashed?: boolean;
+  size?: number;
+}) {
   return (
-    <rect
-      x={x}
-      y={y}
-      width={SEAT}
-      height={SEAT}
-      rx={5}
-      className="fill-brand/15 stroke-brand/70"
-      strokeWidth={1.5}
-    />
+    <g>
+      <rect
+        x={x}
+        y={y}
+        width={size}
+        height={SEAT}
+        rx={5}
+        className={
+          dashed
+            ? "fill-ink/8 stroke-ink/35"
+            : "fill-brand/15 stroke-brand/70"
+        }
+        strokeWidth={1.5}
+        strokeDasharray={dashed ? "4 3" : undefined}
+      />
+      <text
+        x={x + size / 2}
+        y={y + SEAT / 2 + 0.5}
+        textAnchor="middle"
+        dominantBaseline="central"
+        className={`font-heading ${dashed ? "fill-ink/45" : "fill-ink"}`}
+        style={{ fontSize: size < 24 || n > 99 ? 8 : 10, fontWeight: 600 }}
+      >
+        {n}
+      </text>
+    </g>
   );
 }
 
@@ -62,15 +100,33 @@ function Block({
   );
 }
 
+function SeatPair({
+  side,
+  ids,
+  y,
+  dashed,
+}: {
+  side: Side;
+  ids: number[];
+  y: number;
+  dashed?: boolean;
+}) {
+  return (
+    <>
+      {ids.map((n, index) => (
+        <Seat key={n} x={SEAT_X[side][index]} y={y} n={n} dashed={dashed} />
+      ))}
+    </>
+  );
+}
+
 function Cell({ side, cell, y }: { side: Side; cell: SeatCell; y: number }) {
-  if (typeof cell === "number") {
-    return (
-      <>
-        {SEAT_X[side].slice(0, cell).map((x) => (
-          <Seat key={x} x={x} y={y} />
-        ))}
-      </>
-    );
+  if (isSeatIds(cell)) {
+    return <SeatPair side={side} ids={cell} y={y} />;
+  }
+
+  if (isGuide(cell)) {
+    return <SeatPair side={side} ids={cell.guide} y={y} dashed />;
   }
 
   const outer = side === "left" ? 0 : CONTENT;
@@ -138,24 +194,22 @@ function Cell({ side, cell, y }: { side: Side; cell: SeatCell; y: number }) {
 
     case "table":
       return <Block side={side} y={y + SEAT / 4} height={SEAT / 2} />;
-
-    case "guide":
-      return <Block side={side} y={y + 3} height={SEAT - 6} dashed />;
   }
 }
 
 function Deck({ deck }: { deck: SeatDeck }) {
   const seats = deckSeats(deck);
   const height =
-    HEAD + deck.rows.length * ROW_PITCH + (deck.back ? BACK_ROW : 0) + FOOT;
+    HEAD + deck.rows.length * ROW_PITCH + (deck.back.length ? BACK_ROW : 0) + FOOT;
   const backY = HEAD + deck.rows.length * ROW_PITCH;
-  const backSeat = (CONTENT - PAIR_GAP * (deck.back - 1)) / deck.back;
+  const backSeat =
+    (CONTENT - PAIR_GAP * (deck.back.length - 1)) / deck.back.length;
 
   return (
     <figure className="flex flex-col items-center">
       <svg
         viewBox={`0 0 ${WIDTH} ${height}`}
-        className="h-auto w-full max-w-[190px]"
+        className="h-auto w-full max-w-[260px]"
         role="img"
         aria-label={`Raspored ${seats} sedišta${deck.label ? `, ${deck.label.toLowerCase()}` : ""}`}
       >
@@ -180,19 +234,15 @@ function Deck({ deck }: { deck: SeatDeck }) {
             );
           })}
 
-          {deck.back > 0 &&
-            Array.from({ length: deck.back }, (_, index) => (
-              <rect
-                key={index}
-                x={index * (backSeat + PAIR_GAP)}
-                y={backY}
-                width={backSeat}
-                height={SEAT}
-                rx={4}
-                className="fill-brand/12 stroke-brand/45"
-                strokeWidth={1.5}
-              />
-            ))}
+          {deck.back.map((n, index) => (
+            <Seat
+              key={n}
+              x={index * (backSeat + PAIR_GAP)}
+              y={backY}
+              n={n}
+              size={backSeat}
+            />
+          ))}
         </g>
       </svg>
 
@@ -210,30 +260,31 @@ function Deck({ deck }: { deck: SeatDeck }) {
   );
 }
 
-/** Only what the drawing actually contains ends up in the legend. */
-const LEGEND: { cell: SeatCell; label: string; swatch: React.ReactNode }[] = [
+type LegendKey = SeatFixture | "seat" | "guide";
+
+const LEGEND: { key: LegendKey; label: string; swatch: ReactNode }[] = [
   {
-    cell: 0,
+    key: "seat",
     label: "sedište",
     swatch: <span className="size-3 rounded-[3px] border border-brand/60 bg-brand/25" />,
   },
   {
-    cell: "door",
+    key: "door",
     label: "vrata",
     swatch: <span className="h-[3px] w-5 rounded-full bg-brand" />,
   },
   {
-    cell: "driver",
+    key: "driver",
     label: "vozač",
     swatch: <span className="size-3 rounded-full border border-white/40" />,
   },
   {
-    cell: "codriver",
+    key: "codriver",
     label: "suvozač",
     swatch: <span className="size-3 rounded-[3px] border border-white/40" />,
   },
   {
-    cell: "stairs",
+    key: "stairs",
     label: "stepenice",
     swatch: (
       <span className="flex w-5 flex-col gap-[3px]">
@@ -244,22 +295,22 @@ const LEGEND: { cell: SeatCell; label: string; swatch: React.ReactNode }[] = [
     ),
   },
   {
-    cell: "toilet",
+    key: "toilet",
     label: "toalet",
     swatch: <span className="size-3 rounded-[3px] border border-white/35 bg-white/10" />,
   },
   {
-    cell: "kitchen",
+    key: "kitchen",
     label: "kuhinja",
     swatch: <span className="size-3 rounded-[3px] border border-white/35 bg-white/10" />,
   },
   {
-    cell: "table",
+    key: "table",
     label: "sto",
     swatch: <span className="h-1.5 w-4 rounded-[2px] border border-white/35 bg-white/10" />,
   },
   {
-    cell: "guide",
+    key: "guide",
     label: "mesta za vodiče",
     swatch: (
       <span className="size-3 rounded-[3px] border border-dashed border-white/35 bg-white/10" />
@@ -267,20 +318,25 @@ const LEGEND: { cell: SeatCell; label: string; swatch: React.ReactNode }[] = [
   },
 ];
 
+function cellKey(cell: SeatCell): LegendKey | null {
+  if (isSeatIds(cell)) return cell.length ? "seat" : null;
+  if (isGuide(cell)) return "guide";
+  return cell;
+}
+
 export function SeatingChart({ plan }: { plan: SeatPlan }) {
-  const used = new Set<SeatCell>([0]);
+  const used = new Set<LegendKey>(["seat"]);
   for (const deck of plan.decks) {
     for (const row of deck.rows) {
       for (const cell of [row.left, row.right]) {
-        if (typeof cell !== "number") used.add(cell);
+        const key = cellKey(cell);
+        if (key) used.add(key);
       }
     }
   }
 
-  // Toilet and kitchen share a swatch, so keep only the first of the two.
   const entries = LEGEND.filter(
-    ({ cell }) =>
-      used.has(cell) && !(cell === "kitchen" && used.has("toilet"))
+    ({ key }) => used.has(key) && !(key === "kitchen" && used.has("toilet"))
   );
 
   return (
@@ -303,7 +359,7 @@ export function SeatingChart({ plan }: { plan: SeatPlan }) {
       <p className="mt-6 max-w-md text-center text-[13px] leading-relaxed text-white/45">
         {plan.approximate
           ? "Šema je informativna i prikazuje uobičajen raspored za ovaj broj mesta. Tačan raspored potvrđujemo pri rezervaciji."
-          : "Šema prikazuje stvaran raspored sedišta u vozilu, red po red, prema našoj dokumentaciji."}
+          : "Brojevi na sedištima odgovaraju numeraciji u vozilu. Šema je prepisana red po red iz naše dokumentacije."}
       </p>
     </div>
   );
