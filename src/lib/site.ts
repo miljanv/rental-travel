@@ -50,8 +50,8 @@ export const categories: ServiceCategory[] = [
     href: "/iznajmite-autobus",
     excerpt:
       "Autobusi turističke klase od 47 do 87 mesta za putovanja, ekskurzije, team building i ugovoreni prevoz.",
-    image: "/images/fleet/ns-785-rt-1-1600.webp",
-    heroImage: "/images/hero/zajednicke-1-1920.webp",
+    image: "/images/hero/autobus-card-1600.webp",
+    heroImage: "/images/hero/header-1-1920.webp",
   },
   {
     slug: "iznajmite-minibus",
@@ -60,8 +60,8 @@ export const categories: ServiceCategory[] = [
     href: "/iznajmite-minibus",
     excerpt:
       "Minibusevi i kombi vozila do 20 mesta — idealni za manje grupe, gradske ture i transfere.",
-    image: "/images/fleet/ns-871-rt-3-1600.webp",
-    heroImage: "/images/hero/zajednicke-2-1920.webp",
+    image: "/images/hero/minibus-card-1600.webp",
+    heroImage: "/images/hero/header-2-1920.webp",
   },
   {
     slug: "transferi-aerodrom",
@@ -71,7 +71,7 @@ export const categories: ServiceCategory[] = [
     excerpt:
       "Pouzdan i udoban transfer do i sa aerodroma, sa bilo koje lokacije, prilagođen vašem rasporedu leta.",
     image: "/images/hero/sprinter-wide-1600.webp",
-    heroImage: "/images/hero/zajednicke-3-1920.webp",
+    heroImage: "/images/hero/header-3-1920.webp",
   },
   {
     slug: "iznajmite-automobil",
@@ -81,6 +81,7 @@ export const categories: ServiceCategory[] = [
     excerpt:
       "Širok izbor pouzdanih i redovno održavanih vozila za kratkoročno i dugoročno iznajmljivanje.",
     image: "/images/hero/profilna-wide-1600.webp",
+    heroImage: "/images/hero/header-4-1920.webp",
   },
 ];
 
