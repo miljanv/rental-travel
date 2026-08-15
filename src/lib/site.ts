@@ -80,8 +80,8 @@ export const categories: ServiceCategory[] = [
     href: "/iznajmite-automobil",
     excerpt:
       "Širok izbor pouzdanih i redovno održavanih vozila za kratkoročno i dugoročno iznajmljivanje.",
-    image: "/images/hero/profilna-wide-1600.webp",
-    heroImage: "/images/hero/header-4-1920.webp",
+    image: "/images/hero/auto-1600.webp",
+    heroImage: "/images/hero/auto-wide-1600.webp",
   },
 ];
 
