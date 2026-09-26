@@ -8,6 +8,8 @@ type PageHeroProps = {
   text?: string;
   image: string;
   breadcrumb: string;
+  /** Next.js image quality, 1–100. Full-bleed photos should stay high. */
+  quality?: number;
 };
 
 export function PageHero({
@@ -16,6 +18,7 @@ export function PageHero({
   text,
   image,
   breadcrumb,
+  quality,
 }: PageHeroProps) {
   return (
     <section className="relative isolate flex min-h-[520px] items-end overflow-hidden bg-ink pt-[var(--header-height)] lg:min-h-[620px]">
@@ -25,6 +28,7 @@ export function PageHero({
         aria-hidden
         fill
         priority
+        quality={quality}
         sizes="100vw"
         className="animate-ken-burns object-cover opacity-50"
       />

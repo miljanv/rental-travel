@@ -19,7 +19,8 @@ export default function BusPage() {
         eyebrow="Rental travel"
         title="Iznajmite Autobus"
         text="Iako mlada firma, trudimo se da Vam pružimo širi spektar usluga u oblasti prevoza putnika."
-        image="/images/fleet/ns-785-rt-1-1600.webp"
+        image="/images/hero/autobus-page-1600.webp"
+        quality={92}
         breadcrumb="Iznajmite Autobus"
       />
 

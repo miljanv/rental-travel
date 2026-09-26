@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1600, 1920],
     imageSizes: [64, 128, 256, 384],
     minimumCacheTTL: 60 * 60 * 24 * 365,
+    qualities: [75, 92],
   },
   // Nodemailer resolves transports through dynamic requires, which bundlers
   // cannot follow, so it stays a plain Node dependency at runtime.
